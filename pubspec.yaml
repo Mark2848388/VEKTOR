@@ -1,0 +1,44 @@
+name: vektor
+description: Vektor — native Flutter AI assistant
+publish_to: "none"
+version: 1.1.0+2
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  shared_preferences: ^2.3.3
+  uuid: ^4.5.1
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.0
+  file_picker: ^8.1.4
+  path_provider: ^2.1.5
+  archive: ^3.6.1
+  share_plus: ^10.1.2
+  open_filex: ^4.5.0
+  android_intent_plus: ^5.2.0
+  permission_handler: ^11.3.1
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/icon-512.png
+  adaptive_icon_background: "#0A0E1C"
+  adaptive_icon_foreground: assets/icon-512.png
+  min_sdk_android: 24
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon-512.png
+    - assets/icon-192.png

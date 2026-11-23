@@ -1,0 +1,58 @@
+name: Build Vektor APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.27.4"
+          channel: stable
+          cache: true
+      - name: Prepare Android
+        run: |
+          set -e
+          flutter create --project-name vektor --org com.azena /tmp/vs
+          rm -rf android
+          cp -a /tmp/vs/android ./android
+          for f in android/app/build.gradle android/app/build.gradle.kts; do
+            [ -f "$f" ] || continue
+            sed -i 's/applicationId [= ]*".*"/applicationId = "com.azena.vektor"/g' "$f" || true
+            sed -i 's/applicationId ".*"/applicationId "com.azena.vektor"/g' "$f" || true
+            sed -i 's/namespace [= ]*".*"/namespace = "com.azena.vektor"/g' "$f" || true
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' "$f" || true
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 24/g' "$f" || true
+            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g' "$f" || true
+          done
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          if [ -f "$MANIFEST" ]; then
+            # permissions
+            for perm in INTERNET RECORD_AUDIO MODIFY_AUDIO_SETTINGS READ_EXTERNAL_STORAGE WRITE_EXTERNAL_STORAGE; do
+              if ! grep -q "android.permission.$perm" "$MANIFEST"; then
+                sed -i "/<manifest/a\    <uses-permission android:name=\"android.permission.$perm\"/>" "$MANIFEST"
+              fi
+            done
+            # queries for package visibility (Android 11+)
+            if ! grep -q 'queries' "$MANIFEST"; then
+              sed -i '/<\/manifest>/i\    <queries>\n        <intent>\n            <action android:name="android.speech.RecognitionService"\/>\n        <\/intent>\n        <intent>\n            <action android:name="android.intent.action.TTS_SERVICE"\/>\n        <\/intent>\n        <intent>\n            <action android:name="android.intent.action.MAIN"\/>\n        <\/intent>\n    <\/queries>' "$MANIFEST"
+            fi
+          fi
+      - run: flutter pub get
+      - run: dart run flutter_launcher_icons
+        continue-on-error: true
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vektor-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
